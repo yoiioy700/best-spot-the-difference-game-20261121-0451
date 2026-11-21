@@ -1,0 +1,95 @@
+<!doctype html>
+<html lang="id">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="icon" href="data:,">
+<title>Pasar Pagi — Cari Perbedaannya</title>
+<style>
+  :root { --paper: #fdf8ef; --ink: #2b2118; --red: #c8102e; --line: #2b2118; }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; background: var(--paper); color: var(--ink); font-family: Georgia, 'Times New Roman', serif; }
+  body { max-width: 1320px; margin: 0 auto; padding: 18px 22px 30px; }
+  header { border-bottom: 3px double var(--line); padding-bottom: 10px; margin-bottom: 12px; }
+  header h1 { margin: 0; font-size: 34px; letter-spacing: 0.5px; }
+  header p { margin: 4px 0 0; font-family: system-ui, sans-serif; font-size: 14px; color: #5a4a38; }
+  #hud { display: flex; flex-wrap: wrap; gap: 8px 22px; align-items: baseline;
+    font-family: system-ui, sans-serif; font-size: 15px; border-bottom: 1px solid var(--line);
+    padding: 8px 0; margin-bottom: 14px; }
+  #hud b { font-size: 17px; }
+  #hud-remaining { color: var(--red); font-weight: 700; }
+  #hud-dots { letter-spacing: 3px; font-size: 16px; }
+  #panels { display: grid; grid-template-columns: 1fr 1fr; gap: 18px; }
+  .panel { border: 3px solid var(--line); background: #fff; box-shadow: 4px 4px 0 rgba(43,33,24,.18); }
+  .panel-label { font-family: system-ui, sans-serif; font-weight: 700; font-size: 13px;
+    letter-spacing: 2px; padding: 6px 10px; border-bottom: 2px solid var(--line); background: #f3e2c7; }
+  .svg-wrap { cursor: crosshair; line-height: 0; }
+  .svg-wrap svg { width: 100%; height: auto; display: block; }
+  .marker circle { filter: drop-shadow(0 0 2px rgba(200,16,46,.5)); }
+  .hint-ring { fill: none; stroke: var(--red); stroke-width: 4; animation: pulse 0.7s ease-in-out infinite alternate; }
+  @keyframes pulse { from { opacity: .35; } to { opacity: 1; } }
+  #status { font-family: system-ui, sans-serif; font-size: 15px; margin: 12px 0 4px; min-height: 22px; }
+  #controls { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 8px; }
+  button { font-family: system-ui, sans-serif; font-size: 15px; padding: 9px 16px; cursor: pointer;
+    background: #fff; color: var(--ink); border: 2px solid var(--line); border-radius: 2px; }
+  button:hover { background: var(--ink); color: var(--paper); }
+  #overlay { position: fixed; inset: 0; background: rgba(43,33,24,.55); display: flex;
+    align-items: center; justify-content: center; z-index: 10; }
+  #overlay[hidden] { display: none; }
+  #overlay .card { background: var(--paper); border: 3px solid var(--line); max-width: 560px;
+    width: calc(100% - 40px); padding: 26px 30px; box-shadow: 8px 8px 0 rgba(0,0,0,.25); text-align: center; }
+  #overlay h2 { margin: 0 0 10px; font-size: 30px; }
+  #overlay p { font-family: system-ui, sans-serif; font-size: 15px; line-height: 1.6; }
+  #overlay .row { display: flex; gap: 10px; justify-content: center; flex-wrap: wrap; margin-top: 16px; }
+  #overlay .row button { background: var(--red); color: #fff; border-color: var(--red); }
+  #overlay .row button:hover { background: #a30d25; }
+  #selftest { font-family: ui-monospace, monospace; font-size: 13px; background: #fff;
+    border: 1px solid var(--line); padding: 10px; margin-top: 16px; white-space: pre-wrap; }
+  footer { margin-top: 18px; font-family: system-ui, sans-serif; font-size: 12px; color: #5a4a38;
+    border-top: 1px solid var(--line); padding-top: 8px; }
+  @media (max-width: 760px) { #panels { grid-template-columns: 1fr; } header h1 { font-size: 26px; } }
+</style>
+</head>
+<body>
+<header>
+  <h1>Pasar Pagi</h1>
+  <p>Cari perbedaannya — dua gambar los pasar yang hampir sama. Klik perbedaannya di gambar kiri atau kanan.</p>
+</header>
+
+<div id="hud">
+  <b id="hud-level">Level 1 · Pasar Pagi</b>
+  <span>⏱ <b id="hud-time">03:00</b></span>
+  <span id="hud-score">Skor 0</span>
+  <span id="hud-remaining">Sisa 7 perbedaan</span>
+  <span id="hud-dots">○ ○ ○ ○ ○ ○ ○</span>
+  <span id="hud-hints">Petunjuk: 3</span>
+</div>
+
+<main id="panels">
+  <section class="panel" aria-label="Gambar kiri">
+    <div class="panel-label">GAMBAR A</div>
+    <div class="svg-wrap" id="left"></div>
+  </section>
+  <section class="panel" aria-label="Gambar kanan">
+    <div class="panel-label">GAMBAR B</div>
+    <div class="svg-wrap" id="right"></div>
+  </section>
+</main>
+
+<p id="status" role="status" aria-live="polite">Cari 7 perbedaan antara gambar kiri dan kanan.</p>
+
+<div id="controls">
+  <button id="btn-hint" type="button">💡 Petunjuk (H)</button>
+  <button id="btn-restart" type="button">↻ Ulangi level (R)</button>
+  <button id="btn-menu" type="button">☰ Menu</button>
+  <button id="btn-mute" type="button">🔊 Suara nyala</button>
+</div>
+
+<div id="overlay" hidden></div>
+<pre id="selftest" hidden></pre>
+
+<footer>Pasar Pagi — game cari perbedaan original. Semua gambar digambar dari kode; tanpa foto, tanpa jaringan.</footer>
+
+<script type="module" src="./src/main.js"></script>
+</body>
+</html>
